@@ -69,7 +69,7 @@ To remove the schedule: `./uninstall.sh`.
 
 ## Run it in the cloud instead (GitHub Actions, no laptop)
 
-The same script runs on GitHub's servers at 18:00 Montréal time every day. Your Mac can be off. It's free: a private repo gets 2,000 minutes a month and each run takes about 3.
+The same script runs on GitHub's servers every day at about 18:07 Montréal time (backup try at 18:47). Your Mac can be off. It's free: a private repo gets 2,000 minutes a month and each run takes about 3.
 
 1. **Google service account** (the cloud can't see your Drive app's files). Follow option B above: enable the Drive API, create a service account, download its JSON key, and share the **Pervez** and **Sohana** folders with its email as **Viewer**.
 2. **Gmail app password**, as in step 2 above.

@@ -6,8 +6,13 @@ name: Express Entry daily CRS
 
 on:
   schedule:
-    - cron: "0 22 * * *"   # 18:00 in Montréal during summer time (EDT, UTC-4)
-    - cron: "0 23 * * *"   # 18:00 in Montréal during winter time (EST, UTC-5)
+    # GitHub can delay or drop scheduled runs, especially on the hour, so there are two tries each day:
+    # a main run at 18:07 Montréal time and a backup at 18:47 that only sends if the main run didn't.
+    # Each pair covers summer time (EDT, UTC-4: 22:xx UTC) and winter time (EST, UTC-5: 23:xx UTC).
+    - cron: "7 22 * * *"
+    - cron: "7 23 * * *"
+    - cron: "47 22 * * *"
+    - cron: "47 23 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -17,23 +22,34 @@ on:
 
 concurrency: crs-daily
 
+permissions:
+  contents: read
+  actions: write   # read and upload the "sent today" marker
+
 jobs:
   crs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      # Two schedules cover summer and winter time; only the one that is 18:00 in Montréal today goes ahead.
-      - name: Is it the 18:00 run in Montréal?
+      # Only the schedule that falls in Montréal's 18:00 hour today goes ahead, and only if today's email
+      # hasn't been sent yet (a "sent-<date>" marker is uploaded after each real send).
+      - name: Is it the 18:00 run in Montréal, and not sent yet today?
         id: gate
         env:
           EVENT: ${{ github.event_name }}
           SCHEDULE: ${{ github.event.schedule }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
         run: |
+          today=$(TZ=America/Toronto date +%F)
+          echo "today=$today" >> "$GITHUB_OUTPUT"
           if [ "$EVENT" != "schedule" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; exit 0; fi
-          want=$(TZ=UTC date -d "TZ=\"America/Toronto\" $(TZ=America/Toronto date +%F) 18:00" +%-H)
+          want=$(TZ=UTC date -d "TZ=\"America/Toronto\" $today 18:00" +%-H)
           got=$(echo "$SCHEDULE" | awk '{print $2}')
-          echo "18:00 Montréal is $want:00 UTC today; this schedule is $got:00 UTC"
-          if [ "$want" = "$got" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "go=false" >> "$GITHUB_OUTPUT"; fi
+          echo "18:00 Montréal is $want:00 UTC today; this schedule is $got:xx UTC"
+          if [ "$want" != "$got" ]; then echo "go=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          sent=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/$REPO/actions/artifacts?name=sent-$today" | jq '.total_count // 0')
+          if [ "$sent" -gt 0 ]; then echo "Already sent today ($today)."; echo "go=false" >> "$GITHUB_OUTPUT"; else echo "go=true" >> "$GITHUB_OUTPUT"; fi
 
       - uses: actions/checkout@v4
         if: steps.gate.outputs.go == 'true'
@@ -66,6 +82,17 @@ jobs:
         env:
           DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '--dry-run' || '' }}
         run: node crs-daily.js $DRY
+
+      - name: Mark today's email as sent
+        if: success() && steps.gate.outputs.go == 'true' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        run: echo "sent" > sent.txt
+
+      - uses: actions/upload-artifact@v4
+        if: success() && steps.gate.outputs.go == 'true' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
+        with:
+          name: sent-${{ steps.gate.outputs.today }}
+          path: sent.txt
+          retention-days: 3
 
       - name: Remove secrets from the runner
         if: always()
