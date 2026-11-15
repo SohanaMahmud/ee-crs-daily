@@ -1,0 +1,31 @@
+{
+  "_readme": "Copy this file to config.json and fill it in. See README.md. Keep config.json private (it holds the Gmail app password).",
+  "timeZone": "America/Toronto",
+
+  "source": {
+    "_choose": "type 'local' reads the CSVs from files on this Mac (e.g. a Google Drive for Desktop folder). type 'drive' reads them straight from Google Drive with a service account.",
+    "type": "local",
+    "principal": "~/Library/CloudStorage/GoogleDrive-YOUR_EMAIL/My Drive/Canada PR – Express Entry/Pervez/Pervez_EE_profile.csv",
+    "partner":   "~/Library/CloudStorage/GoogleDrive-YOUR_EMAIL/My Drive/Canada PR – Express Entry/Sohana/Sohana_EE_profile.csv",
+    "plans":     "~/Library/CloudStorage/GoogleDrive-YOUR_EMAIL/My Drive/Canada PR – Express Entry/Pervez/Pervez_EE_future_plan.csv"
+  },
+
+  "_source_drive_example": {
+    "type": "drive",
+    "serviceAccountKey": "~/ee-crs-daily/service-account.json",
+    "principal": { "folderId": "1hJf_UgMcq-KwIO2u7vPkBAq16NTz-ulk", "name": "Pervez_EE_profile.csv" },
+    "partner":   { "folderId": "1FzRN5dk5LDMTHfvdJffkqFyslh2yA0fZ", "name": "Sohana_EE_profile.csv" },
+    "plans":     { "folderId": "1hJf_UgMcq-KwIO2u7vPkBAq16NTz-ulk", "name": "Pervez_EE_future_plan.csv" }
+  },
+
+  "browser": { "headless": true, "channel": "" },
+
+  "mail": {
+    "host": "smtp.gmail.com",
+    "port": 465,
+    "user": "pervez.cse@gmail.com",
+    "appPassword": "xxxx xxxx xxxx xxxx",
+    "from": "Express Entry CRS <pervez.cse@gmail.com>",
+    "to": ["pervez.cse@gmail.com", "sohanamahmud@gmail.com"]
+  }
+}

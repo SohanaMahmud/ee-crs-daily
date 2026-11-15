@@ -1,0 +1,20 @@
+{
+  "_readme": "Paste this whole file (filled in) as the GitHub secret CRS_CONFIG_JSON. The service account key goes in the secret GDRIVE_SA_JSON.",
+  "timeZone": "America/Toronto",
+  "source": {
+    "type": "drive",
+    "serviceAccountKey": "service-account.json",
+    "principal": { "folderId": "1hJf_UgMcq-KwIO2u7vPkBAq16NTz-ulk", "name": "Pervez_EE_profile.csv" },
+    "partner":   { "folderId": "1FzRN5dk5LDMTHfvdJffkqFyslh2yA0fZ", "name": "Sohana_EE_profile.csv" },
+    "plans":     { "folderId": "1hJf_UgMcq-KwIO2u7vPkBAq16NTz-ulk", "name": "Pervez_EE_future_plan.csv" }
+  },
+  "browser": { "headless": true },
+  "mail": {
+    "host": "smtp.gmail.com",
+    "port": 465,
+    "user": "pervez.cse@gmail.com",
+    "appPassword": "xxxx xxxx xxxx xxxx",
+    "from": "Express Entry CRS <pervez.cse@gmail.com>",
+    "to": ["pervez.cse@gmail.com", "sohanamahmud@gmail.com"]
+  }
+}

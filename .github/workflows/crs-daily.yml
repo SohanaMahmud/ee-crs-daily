@@ -1,0 +1,72 @@
+# Runs ee-crs-daily on GitHub's servers every day at 18:00 Montréal time. No laptop needed.
+# Secrets (repo Settings > Secrets and variables > Actions):
+#   CRS_CONFIG_JSON  the whole config.json (source.type "drive", see config.cloud.example.json)
+#   GDRIVE_SA_JSON   the Google service account key (JSON) that can read the Pervez and Sohana folders
+name: Express Entry daily CRS
+
+on:
+  schedule:
+    - cron: "0 22 * * *"   # 18:00 in Montréal during summer time (EDT, UTC-4)
+    - cron: "0 23 * * *"   # 18:00 in Montréal during winter time (EST, UTC-5)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only print the tables in the log (no email)"
+        type: boolean
+        default: true
+
+concurrency: crs-daily
+
+jobs:
+  crs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # Two schedules cover summer and winter time; only the one that is 18:00 in Montréal today goes ahead.
+      - name: Is it the 18:00 run in Montréal?
+        id: gate
+        env:
+          EVENT: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          if [ "$EVENT" != "schedule" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          want=$(TZ=UTC date -d "TZ=\"America/Toronto\" $(TZ=America/Toronto date +%F) 18:00" +%-H)
+          got=$(echo "$SCHEDULE" | awk '{print $2}')
+          echo "18:00 Montréal is $want:00 UTC today; this schedule is $got:00 UTC"
+          if [ "$want" = "$got" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "go=false" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.go == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.go == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        if: steps.gate.outputs.go == 'true'
+        run: |
+          npm ci --omit=dev --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Write config and key from secrets
+        if: steps.gate.outputs.go == 'true'
+        env:
+          CRS_CONFIG_JSON: ${{ secrets.CRS_CONFIG_JSON }}
+          GDRIVE_SA_JSON: ${{ secrets.GDRIVE_SA_JSON }}
+        run: |
+          umask 077
+          printf '%s' "$CRS_CONFIG_JSON" > config.json
+          printf '%s' "$GDRIVE_SA_JSON" > service-account.json
+          node -e "JSON.parse(require('fs').readFileSync('config.json'))" || { echo "CRS_CONFIG_JSON is not valid JSON"; exit 1; }
+
+      - name: Run the official calculator and email the tables
+        if: steps.gate.outputs.go == 'true'
+        env:
+          DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '--dry-run' || '' }}
+        run: node crs-daily.js $DRY
+
+      - name: Remove secrets from the runner
+        if: always()
+        run: rm -f config.json service-account.json
