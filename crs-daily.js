@@ -50,7 +50,7 @@ async function runScenario(context, inputs, overrides) {
 
 function transport() {
   const m = config.mail;
-  return nodemailer.createTransport({ host: m.host || "smtp.gmail.com", port: m.port || 465, secure: m.secure !== false, auth: { user: m.user, pass: m.appPassword } });
+  return nodemailer.createTransport({ host: m.host || "smtp.gmail.com", port: m.port || 465, secure: m.secure !== false, auth: { user: m.user, pass: String(m.appPassword).replace(/\s+/g, "") } });
 }
 
 async function send(subject, text, html) {
