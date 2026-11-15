@@ -5,7 +5,7 @@ This runs every day on your Mac with no Claude involved. It:
 1. reads your profile, Sohana's profile and your future plans (CSV files);
 2. opens IRCC's **official CRS calculator** in a hidden Chrome window (Playwright), fills every question and clicks **Calculate your score**, once for your current profile and once for every combination of plans;
 3. reads the site's own total, the latest draw cutoffs from IRCC's rounds data, and the category rules from IRCC's category page;
-4. emails the two tables (**Input (current profile)** and **Points**) to you and Sohana.
+4. emails three tables to you and Sohana: **Input (current profile)**, **Points**, and **Documents to collect** (from the `*_EE_evidence_documents.csv` checklists next to each profile).
 
 Every total comes from the site. The script never adds up points itself. If anything fails, you both get a one-line email saying why, with no numbers.
 

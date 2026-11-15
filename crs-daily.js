@@ -92,7 +92,7 @@ async function main() {
     await browser.close();
   }
 
-  const rep = report.build(runs, today);
+  const rep = report.build(runs, today, inputs.evidence);
   const text = report.toText(rep), html = report.toHtml(rep);
   fs.writeFileSync(path.join(HERE, "last-report.html"), html);
   if (DRY) {
