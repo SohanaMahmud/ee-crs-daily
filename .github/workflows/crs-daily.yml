@@ -19,6 +19,10 @@ on:
         description: "Only print the tables in the log (no email)"
         type: boolean
         default: true
+      if_not_sent:
+        description: "Skip if today's email was already sent (used by the 18:00 trigger)"
+        type: boolean
+        default: false
 
 concurrency: crs-daily
 
@@ -40,15 +44,19 @@ jobs:
           SCHEDULE: ${{ github.event.schedule }}
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
+          IF_NOT_SENT: ${{ github.event_name == 'workflow_dispatch' && inputs.if_not_sent }}
         run: |
           today=$(TZ=America/Toronto date +%F)
           echo "today=$today" >> "$GITHUB_OUTPUT"
-          if [ "$EVENT" != "schedule" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          sent=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/$REPO/actions/artifacts?name=sent-$today" | jq '.total_count // 0')
+          if [ "$EVENT" != "schedule" ]; then
+            if [ "$IF_NOT_SENT" = "true" ] && [ "$sent" -gt 0 ]; then echo "Already sent today ($today)."; echo "go=false" >> "$GITHUB_OUTPUT"; else echo "go=true" >> "$GITHUB_OUTPUT"; fi
+            exit 0
+          fi
           want=$(TZ=UTC date -d "TZ=\"America/Toronto\" $today 18:00" +%-H)
           got=$(echo "$SCHEDULE" | awk '{print $2}')
           echo "18:00 Montréal is $want:00 UTC today; this schedule is $got:xx UTC"
           if [ "$want" != "$got" ]; then echo "go=false" >> "$GITHUB_OUTPUT"; exit 0; fi
-          sent=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/$REPO/actions/artifacts?name=sent-$today" | jq '.total_count // 0')
           if [ "$sent" -gt 0 ]; then echo "Already sent today ($today)."; echo "go=false" >> "$GITHUB_OUTPUT"; else echo "go=true" >> "$GITHUB_OUTPUT"; fi
 
       - uses: actions/checkout@v4
