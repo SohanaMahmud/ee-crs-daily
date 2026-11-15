@@ -23,9 +23,9 @@
   "mail": {
     "host": "smtp.gmail.com",
     "port": 465,
-    "user": "pervez.cse@gmail.com",
+    "user": "sohanamahmud@gmail.com",
     "appPassword": "xxxx xxxx xxxx xxxx",
-    "from": "Express Entry CRS <pervez.cse@gmail.com>",
+    "from": "Express Entry CRS <sohanamahmud@gmail.com>",
     "to": ["pervez.cse@gmail.com", "sohanamahmud@gmail.com"]
   }
 }

@@ -43,7 +43,7 @@ The script finds files by name, so it keeps working when a CSV is replaced.
 
 ### 2. Gmail app password
 
-Using the sending account (for example pervez.cse@gmail.com):
+Using sohanamahmud@gmail.com (the same account that owns the Drive folder):
 
 1. Turn on 2-Step Verification: Google Account → Security.
 2. Go to <https://myaccount.google.com/apppasswords>, create one named "ee-crs-daily", and copy the 16 characters.
