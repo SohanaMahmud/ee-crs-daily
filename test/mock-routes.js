@@ -62,11 +62,37 @@ const CATS = `<html><body><main>
 <table><tbody><tr><td>Truck drivers</td><td>73300</td></tr></tbody></table></section>
 </main></body></html>`;
 
+// IRCC document pages: same structure as the real ones (captured 2026-11-15)
+const DOCS = `<html><body><main><h1>Get your documents ready</h1>
+<p>You may need information from some or all of these documents when you create a profile:</p>
+<ul><li>a passport or travel document<p>If your passport expires within 6 months...</p></li>
+<li><a href="/en/x/language-test.html">language test results</a></li>
+<li>proof of Canadian education or an <a href="/en/x/education-assessment.html">educational credential assessment report</a> for immigration purposes if:<ul><li>you’re applying through the Federal Skilled Workers Program, or</li></ul></li>
+<li><a href="/en/x/job-offer.html">written job offer from an employer in Canada</a> (if you have one)</li>
+<li>proof of work experience (such as a reference or experience letter from an employer)</li>
+<li>certificate of qualification in a trade occupation issued by a Canadian province or territory (if you have one)</li>
+<li><a href="/en/x/proof-funds.html">proof of funds</a></li>
+<li><a href="/en/x/police-certificates.html">police certificates</a></li>
+<li><a href="/en/x/get-confirm-nomination.html">provincial nomination</a> (if you applied for the Provincial Nominee Program)</li></ul></main></body></html>`;
+const APPLY = `<html><body><main><h2 id="documents">2. Upload your documents</h2><h3>Get the right documents</h3>
+<p>Most applicants will also need to upload:</p>
+<ul><li><a href="/en/x/police-certificates.html">police certificates</a></li><li><a href="/en/x/proof-funds.html">proof of funds</a></li>
+<li>birth certificate, if you’re declaring dependent children</li>
+<li><a href="/en/x/imm5476.html">Use of a Representative form [IMM 5476]</a>, if you’ve hired a representative</li>
+<li><a href="/en/x/imm5409.html">common-law union form [IMM 5409]</a>, if you’ve declared your marital status as “common-law”</li>
+<li>marriage certificate, if you’ve declared your marital status as “married”</li>
+<li>divorce certificate and legal separation agreement, if you’ve declared your marital status as “divorced”</li>
+<li>death certificate, if you’ve declared your marital status as “widowed”</li>
+<li>adoption certificate, when a dependent child is listed as “adopted”</li></ul>
+<h3>Get a medical exam, if you need one</h3><p>An <a href="/en/x/requirements-permanent-residents.html">immigration medical exam (IME)</a> from a panel physician is a requirement.</p></main></body></html>`;
+
 module.exports = async (context) => {
   await context.route("https://www.canada.ca/**", (route) => {
     const u = route.request().url();
     if (u.includes("ee_rounds_123_en.json")) return route.fulfill({ contentType: "application/json", body: JSON.stringify(FEED) });
     if (u.includes("category-based-selection")) return route.fulfill({ contentType: "text/html", body: CATS });
+    if (u.includes("express-entry/documents.html")) return route.fulfill({ contentType: "text/html", body: DOCS });
+    if (u.includes("apply-permanent-residence.html")) return route.fulfill({ contentType: "text/html", body: APPLY });
     if (u.includes("check-score.html")) return route.fulfill({ contentType: "text/html", body: PAGE });
     return route.fulfill({ status: 404, body: "" });
   });

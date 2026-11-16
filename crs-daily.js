@@ -16,6 +16,7 @@ const { chromium } = require("playwright");
 const nodemailer = require("nodemailer");
 const { loadInputs, combinations, ageOn } = require("./lib/inputs");
 const report = require("./lib/report");
+const irccDocs = require("./lib/ircc-docs");
 
 const CALCULATOR = "https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/express-entry/check-score.html";
 const args = new Set(process.argv.slice(2));
@@ -81,6 +82,7 @@ async function main() {
   const context = await browser.newContext({ locale: "en-CA", timezoneId: TZ, bypassCSP: true });
   if (process.env.CRS_TEST_ROUTES) await require(path.resolve(process.env.CRS_TEST_ROUTES))(context); // tests only
   const runs = [];
+  let docs;
   try {
     for (const s of scenarios) {
       log(`Running ${s.name} on the official calculator`, JSON.stringify(s.overrides));
@@ -88,11 +90,25 @@ async function main() {
       log(`${s.name}: site total ${r.result.score}`);
       runs.push({ name: s.name, ...r });
     }
+    // Table 3: IRCC's official document lists, read live, checked against the Drive folders.
+    // A problem here doesn't stop the email: table 3 then says what went wrong.
+    try {
+      log("Reading IRCC's document lists");
+      const page = await context.newPage();
+      const lists = await irccDocs.readIrccLists(page);
+      await page.close();
+      if (!lists.profile.length || !lists.after.length) throw new Error("the lists weren't found on IRCC's pages (the pages may have changed)");
+      log(`IRCC lists: ${lists.profile.length} profile items, ${lists.after.length} after-invitation items`);
+      docs = { rows: await irccDocs.documentsToCollect(lists, inputs.household, inputs.lister) };
+    } catch (e) {
+      log("Documents table:", e.message);
+      docs = { rows: [], error: e.message };
+    }
   } finally {
     await browser.close();
   }
 
-  const rep = report.build(runs, today, inputs.evidence, config.uploadLink);
+  const rep = report.build(runs, today, docs, config.uploadLink);
   const text = report.toText(rep), html = report.toHtml(rep);
   fs.writeFileSync(path.join(HERE, "last-report.html"), html);
   if (DRY) {
