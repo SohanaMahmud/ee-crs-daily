@@ -97,8 +97,8 @@ async function main() {
       const page = await context.newPage();
       const lists = await irccDocs.readIrccLists(page);
       await page.close();
-      if (!lists.profile.length || !lists.after.length) throw new Error("the lists weren't found on IRCC's pages (the pages may have changed)");
-      log(`IRCC lists: ${lists.profile.length} profile items, ${lists.after.length} after-invitation items`);
+      if (!lists.docs.length) throw new Error("the document list wasn't found on IRCC's completeness-check page (the page may have changed)");
+      log(`IRCC completeness list: ${lists.docs.length} documents (${lists.docs.map((d) => d.title).join(" | ")})`);
       docs = { rows: await irccDocs.documentsToCollect(lists, inputs.household, inputs.lister) };
     } catch (e) {
       log("Documents table:", e.message);
